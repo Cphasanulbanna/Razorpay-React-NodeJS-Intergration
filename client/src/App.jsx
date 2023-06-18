@@ -8,20 +8,31 @@ export const App = () => {
         {
             id: 1,
             image: "https://www.shop.panasonic.com/ca/sites/default/files/salsify/product/image/S5IIX_S-R2060_slant_K.jpg",
-            price: 3000,
+            price: "1",
         },
         {
             id: 2,
             image: "https://maplestore.in/wp-content/uploads/2023/05/Apple-Care-Plus-for-MacBook-Pro-M2-13-inch-720x720.png",
-            price: 5000,
+            price: "5000",
         },
     ];
 
     const loadScript = async () => {
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
-
         document.body.appendChild(script);
+    };
+
+    const handlePaymentStatus = async (response) => {
+        const data = {
+            orderCreationId: id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+        };
+
+        const result = await axios.post("http://localhost:8000/api/payment/verify-payment", data);
+        console.log(result.data, "result of payement from server");
     };
 
     const checkout = async (price) => {
@@ -46,21 +57,7 @@ export const App = () => {
                 image: { logo },
                 order_id: id,
 
-                handler: async function (response) {
-                    const data = {
-                        orderCreationId: id,
-                        razorpayPaymentId: response.razorpay_payment_id,
-                        razorpayOrderId: response.razorpay_order_id,
-                        razorpaySignature: response.razorpay_signature,
-                    };
-
-                    const result = await axios.post(
-                        "http://localhost:8000/api/payment/verify-payment",
-                        data
-                    );
-
-                    alert(result.data.msg);
-                },
+                handler: handlePaymentStatus,
 
                 prefill: {
                     name: "Banna",
@@ -77,8 +74,6 @@ export const App = () => {
 
             const paymentObject = new window.Razorpay(options);
             paymentObject.open();
-
-            console.log(response.data);
         } catch (error) {
             console.log(error);
         }

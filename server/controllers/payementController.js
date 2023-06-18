@@ -21,7 +21,8 @@ const checkout = async (req, res) => {
 
 const verifyPayment = async (req, res) => {
     try {
-        res.status(200).json({ message: "success" });
+        console.log(req.body);
+        res.status(200).json({ message: "payement successfull" });
     } catch (error) {
         res.status(500).json({ message: error.message });
         console.log(error.message);
