@@ -24,20 +24,22 @@ const checkout = async (req, res) => {
 
 const verifyPayment = async (req, res) => {
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
-        const generatedSignature = crypto.createHmac("sha256", process.env.RAZORPAY_APIKEY_SECRET);
-        generatedSignature.update(razorpay_order_id + "|" + razorpay_payment_id).digest("hex");
+        const generatedSignature = crypto
+            .createHmac("sha256", process.env.RAZORPAY_APIKEY_SECRET)
+            .update(razorpayOrderId + "|" + razorpayPaymentId)
+            .digest("hex");
 
-        if (generatedSignature === razorpay_signature) {
+        if (generatedSignature === razorpaySignature) {
             await Payment.create({
-                razorpay_order_id: razorpay_order_id,
-                razorpay_payment_id: razorpay_payment_id,
-                razorpay_signature: razorpay_signature,
+                razorpay_order_id: razorpayOrderId,
+                razorpay_payment_id: razorpayPaymentId,
+                razorpay_signature: razorpaySignature,
             });
-            return res.status(200).json({ message: "payement successfull" });
+            return res.status(200).json({ message: "payement successfull", paymentStatus: true });
         }
-        return res.status(400).json({ message: "Payment failed" });
+        return res.status(400).json({ message: "Payment failed", paymentStatus: false });
     } catch (error) {
         res.status(500).json({ message: error.message });
         console.log(error.message);

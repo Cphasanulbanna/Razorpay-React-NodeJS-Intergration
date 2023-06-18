@@ -1,19 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import logo from "../public/vite.svg";
 
 import axios from "axios";
 
 export const App = () => {
+    const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
     const products = [
         {
             id: 1,
             image: "https://www.shop.panasonic.com/ca/sites/default/files/salsify/product/image/S5IIX_S-R2060_slant_K.jpg",
-            price: "1",
+            price: 1000,
         },
         {
             id: 2,
             image: "https://maplestore.in/wp-content/uploads/2023/05/Apple-Care-Plus-for-MacBook-Pro-M2-13-inch-720x720.png",
-            price: "5000",
+            price: 5000,
         },
     ];
 
@@ -53,12 +54,16 @@ export const App = () => {
                         razorpaySignature: response.razorpay_signature,
                     };
 
-                    const result = await axios.post(
-                        "http://localhost:8000/api/payment/verify-payment",
-                        data
-                    );
-
-                    console.log(result.data, "result of payement from server");
+                    try {
+                        const result = await axios.post(
+                            "http://localhost:8000/api/payment/verify-payment",
+                            data
+                        );
+                        setIsPaymentSuccess(result.data.paymentStatus);
+                    } catch (error) {
+                        setIsPaymentSuccess(false);
+                        console.log(error.message);
+                    }
                 },
 
                 prefill: {
