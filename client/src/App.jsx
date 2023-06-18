@@ -1,84 +1,112 @@
 import React from "react";
+import logo from "../public/vite.svg";
 
-const App = () => {
-    const BASE_URL = "http://localhost:6000/api/";
+import axios from "axios";
 
-    function loadScript(src) {
-        return new Promise((resolve) => {
-            const script = document.createElement("script");
-            script.src = src;
-            script.onload = () => {
-                resolve(true);
+export const App = () => {
+    const products = [
+        {
+            id: 1,
+            image: "https://www.shop.panasonic.com/ca/sites/default/files/salsify/product/image/S5IIX_S-R2060_slant_K.jpg",
+            price: 3000,
+        },
+        {
+            id: 2,
+            image: "https://maplestore.in/wp-content/uploads/2023/05/Apple-Care-Plus-for-MacBook-Pro-M2-13-inch-720x720.png",
+            price: 5000,
+        },
+    ];
+
+    const loadScript = async () => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+
+        document.body.appendChild(script);
+    };
+
+    const checkout = async (price) => {
+        try {
+            await loadScript();
+            const {
+                data: { key },
+            } = await axios.get("http://localhost:8000/api/payment/");
+
+            const response = await axios.post("http://localhost:8000/api/payment/checkout", {
+                amount: price,
+            });
+
+            const { amount, currency, id } = response.data.order;
+
+            const options = {
+                key: key,
+                amount: amount.toString(),
+                currency: currency,
+                name: "Banna",
+                description: "Test Transaction",
+                image: { logo },
+                order_id: id,
+
+                handler: async function (response) {
+                    const data = {
+                        orderCreationId: id,
+                        razorpayPaymentId: response.razorpay_payment_id,
+                        razorpayOrderId: response.razorpay_order_id,
+                        razorpaySignature: response.razorpay_signature,
+                    };
+
+                    const result = await axios.post(
+                        "http://localhost:8000/api/payment/verify-payment",
+                        data
+                    );
+
+                    alert(result.data.msg);
+                },
+
+                prefill: {
+                    name: "Banna",
+                    email: "banna@example.com",
+                    contact: "9747159584",
+                },
+                notes: {
+                    address: "Example Corporate Office",
+                },
+                theme: {
+                    color: "#61dafb",
+                },
             };
-            script.onerror = () => {
-                resolve(false);
-            };
-            document.body.appendChild(script);
-        });
-    }
 
-    const showRazorpay = async () => {
-        const response = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
 
-        if (!response) {
-            alert("Razorpay SDK failed to load. Are you online?");
-            return;
+            console.log(response.data);
+        } catch (error) {
+            console.log(error);
         }
-
-        // creating a new order
-        const result = await axios.post(`${BASE_URL}orders`);
-
-        if (!result) {
-            alert("Server error. Are you online?");
-            return;
-        }
-
-        // Getting the order details back
-        const { amount, id: order_id, currency } = result.data;
-
-        const options = {
-            key: process.env.KEY_ID, // Enter the Key ID generated from the Dashboard
-            amount: amount.toString(),
-            currency: currency,
-            name: "Hasanul banna.",
-            description: "Test Transaction",
-            order_id: order_id,
-            handler: async function (response) {
-                const data = {
-                    orderCreationId: order_id,
-                    razorpayPaymentId: response.razorpay_payment_id,
-                    razorpayOrderId: response.razorpay_order_id,
-                    razorpaySignature: response.razorpay_signature,
-                };
-
-                const result = await axios.post(`${BASE_URL}success`, data);
-
-                alert(result.data.msg);
-            },
-            prefill: {
-                name: "Hasanul Banna",
-                email: "banna@example.com",
-                contact: "9999999999",
-            },
-            notes: {
-                address: "Hasanul Banna Corporate Office",
-            },
-            theme: {
-                color: "#61dafb",
-            },
-        };
-
-        const paymentObject = new window.Razorpay(options);
-        paymentObject.open();
     };
     return (
-        <section>
-            <div></div>
-            <div>
-                <button onClick={() => showRazorpay()}>Pay 500</button>
+        <section id="home">
+            <div className="content-box">
+                {products?.map((product) => (
+                    <div
+                        key={product?.id}
+                        className="product-container"
+                    >
+                        <div className="image">
+                            <img
+                                src={product.image}
+                                alt="camera"
+                            />
+                        </div>
+                        <p>{product?.price}</p>
+                        <button
+                            className="button"
+                            onClick={() => checkout(product?.price)}
+                        >
+                            Buy now
+                        </button>
+                    </div>
+                ))}
             </div>
         </section>
     );
 };
-
-export default App;
