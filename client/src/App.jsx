@@ -23,18 +23,6 @@ export const App = () => {
         document.body.appendChild(script);
     };
 
-    const handlePaymentStatus = async (response) => {
-        const data = {
-            orderCreationId: id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpaySignature: response.razorpay_signature,
-        };
-
-        const result = await axios.post("http://localhost:8000/api/payment/verify-payment", data);
-        console.log(result.data, "result of payement from server");
-    };
-
     const checkout = async (price) => {
         try {
             await loadScript();
@@ -57,7 +45,21 @@ export const App = () => {
                 image: { logo },
                 order_id: id,
 
-                handler: handlePaymentStatus,
+                handler: async function (response) {
+                    const data = {
+                        orderCreationId: id,
+                        razorpayPaymentId: response.razorpay_payment_id,
+                        razorpayOrderId: response.razorpay_order_id,
+                        razorpaySignature: response.razorpay_signature,
+                    };
+
+                    const result = await axios.post(
+                        "http://localhost:8000/api/payment/verify-payment",
+                        data
+                    );
+
+                    console.log(result.data, "result of payement from server");
+                },
 
                 prefill: {
                     name: "Banna",
@@ -74,6 +76,8 @@ export const App = () => {
 
             const paymentObject = new window.Razorpay(options);
             paymentObject.open();
+
+            console.log(response.data?.message);
         } catch (error) {
             console.log(error);
         }

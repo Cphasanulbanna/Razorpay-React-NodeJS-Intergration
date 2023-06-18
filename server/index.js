@@ -3,10 +3,13 @@ const cors = require("cors");
 require("dotenv").config();
 
 const paymentRoute = require("./routes/payementRoute");
+const { connectDb } = require("./config/db");
 
 const PORT = 8000;
 
 const app = express();
+
+connectDb();
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
